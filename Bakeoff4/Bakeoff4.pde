@@ -22,6 +22,7 @@ int startTime = 0; // time starts when the first click is captured
 int finishTime = 0; //records the time of the final click
 boolean userDone = false;
 int countDownTimerWait = 0;
+float dy,dz= 0;
 
 void setup() {
   size(600, 600); //you can change this to be fullscreen
@@ -42,7 +43,6 @@ void setup() {
     targets.add(t);
     println("created target with " + t.target + "," + t.action);
   }
-
   Collections.shuffle(targets); // randomize the order of the button;
 }
 
@@ -64,91 +64,88 @@ void draw() {
     userDone=true;
     finishTime = millis();
   }
-
   if (userDone)
   {
     text("User completed " + trialCount + " trials", width/2, 50);
     text("User took " + nfc((finishTime-startTime)/1000f/trialCount, 1) + " sec per target", width/2, 150);
     return;
   }
-
-  for (int i=0; i<4; i++)
-  {
-    if (targets.get(index).target==i)
-      fill(0, 255, 0);
-    else
-      fill(180, 180, 180);
-    ellipse(300, i*150+100, 100, 100);
+  // left to right 
+  if (dz > 0){
+    fill(#FAAC4C); 
+    rect(10*abs(dz), 300, 20*abs(dz), 600);
   }
-
-  if (light>proxSensorThreshold)
-    fill(180, 0, 0);
-  else
-    fill(255, 0, 0);
-  ellipse(cursorX, cursorY, 50, 50);
-
-  fill(255);//white
+  else if (dz < 0) {
+    fill(#9095FF); 
+    rect(600-10*abs(dz), 300, 20 * abs(dz), 600);
+  }
+  // down to up
+  if (dy>0) {
+    fill(#FF6767); 
+    rect(300,10*abs(dy),600, 20 * abs(dy));
+  }
+  else if (dy < 0) {
+    fill(#68E580); 
+    rect(300, 600-10*abs(dy), 600, 20 * abs(dy));
+  }
+  Target t = targets.get(index);
+  if (t.target==0){fill(#FAAC4C); rect(25, 300, 50, 600);}
+  else if (t.target==2){fill(#9095FF); rect(575, 300, 50, 600);}
+  else if (t.target==1){fill(#FF6767);rect(300,25,600,50);}
+  else if (t.target==3){fill(#68E580);rect(300,575,600,50);}
+  fill(255);
   text("Trial " + (index+1) + " of " +trialCount, width/2, 50);
   text("Target #" + (targets.get(index).target)+1, width/2, 100);
-
-  if (targets.get(index).action==0)
-    text("UP", width/2, 150);
-  else
-    text("DOWN", width/2, 150);
+  
 }
 
-void onAccelerometerEvent(float x, float y, float z)
+void onOrientationEvent(float x, float y, float z) 
 {
   int index = trialIndex;
-
+  dy = y;
+  dz = z;
+  Target t = targets.get(index);
+  int li = (light <= proxSensorThreshold )? 1:0;
   if (userDone || index>=targets.size())
     return;
-
-  if (light>proxSensorThreshold) //only update cursor, if light is low
+  if (((z > 30)||(z<30) || (y<30) || (y>30)) && countDownTimerWait<0)
   {
-    cursorX = 300+x*40; //cented to window and scaled
-    cursorY = 300-y*40; //cented to window and scaled
-  }
-
-  Target t = targets.get(index);
-
-  if (t==null)
-    return;
- 
-  if (light<=proxSensorThreshold && abs(z-9.8)>4 && countDownTimerWait<0) //possible hit event
-  {
-    if (hitTest()==t.target)//check if it is the right target
+    if (li == t.action)
     {
-      //println(z-9.8); use this to check z output!
-      if (((z-9.8)>4 && t.action==0) || ((z-9.8)<-4 && t.action==1))
-      {
-        println("Right target, right z direction!");
-        trialIndex++; //next trial!
-      } else
-      {
-        if (trialIndex>0)
-          trialIndex--; //move back one trial as penalty!
-        println("right target, WRONG z direction!");
-      }
-      countDownTimerWait=30; //wait roughly 0.5 sec before allowing next trial
-    } 
-  } else if (light<=proxSensorThreshold && countDownTimerWait<0 && hitTest()!=t.target)
-  { 
-    println("wrong round 1 action!"); 
-
-    if (trialIndex>0)
-      trialIndex--; //move back one trial as penalty!
-
-    countDownTimerWait=30; //wait roughly 0.5 sec before allowing next trial
+       print(y,z);
+       if (z>30 && t.target == 0) {
+         trialIndex++;
+       }
+       else if (y>30 && t.target == 1){
+         trialIndex++;
+       }
+       else if (z < 30 && t.target == 2){
+         trialIndex ++;
+       }
+       else if (y<30 && t.target == 3){
+         trialIndex++;
+       }
+       else
+       {
+         if (trialIndex > 0)
+           trialIndex--;
+           countDownTimerWait = 30;
+         print("you failed1");
+       }
+    }else{
+      if (trialIndex > 0) trialIndex--;
+       countDownTimerWait = 30;
+       print("you failed2");
+    }
   }
 }
+
 
 int hitTest() 
 {
   for (int i=0; i<4; i++)
     if (dist(300, i*150+100, cursorX, cursorY)<100)
       return i;
-
   return -1;
 }
 
