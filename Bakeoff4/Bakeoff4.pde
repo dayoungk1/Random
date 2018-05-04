@@ -95,8 +95,23 @@ void draw() {
   else if (t.target==3){fill(#68E580);rect(300,575,600,50);}
   fill(255);
   text("Trial " + (index+1) + " of " +trialCount, width/2, 50);
-  text("Target #" + (targets.get(index).target)+1, width/2, 100);
-  
+  if (targets.get(index).target == 0){
+    text("LEFT", width/2, 100);
+  }
+  else if (targets.get(index).target == 1){
+    text("UP", width/2, 100);
+  }
+  else if (targets.get(index).target == 2){
+    text("LEFT", width/2, 100);
+  } else {
+    text("RIGHT", width/2, 100);
+  }
+  if (targets.get(index).action == 1)
+  {
+     text("COVER", width/2, 150); 
+  } else {
+     text("UNCOVER", width/2, 150); 
+  }
 }
 
 void onOrientationEvent(float x, float y, float z) 
@@ -108,34 +123,40 @@ void onOrientationEvent(float x, float y, float z)
   int li = (light <= proxSensorThreshold )? 1:0;
   if (userDone || index>=targets.size())
     return;
-  if (((z > 30)||(z<30) || (y<30) || (y>30)) && countDownTimerWait<0)
+  
+  if (((z > 30)||(z<-30) || (y<-30) || (y>30)) && countDownTimerWait<0)
   {
+    println(y,z, li, "target", t.target, "action", t.action);
     if (li == t.action)
     {
-       print(y,z);
        if (z>30 && t.target == 0) {
          trialIndex++;
+         countDownTimerWait = 60;
        }
        else if (y>30 && t.target == 1){
-         trialIndex++;
+         trialIndex++; 
+         countDownTimerWait = 60;
        }
-       else if (z < 30 && t.target == 2){
+       else if (z < -30 && t.target == 2){
          trialIndex ++;
+         countDownTimerWait = 60;
        }
-       else if (y<30 && t.target == 3){
+       else if (y<-30 && t.target == 3){
          trialIndex++;
+         countDownTimerWait = 60;
        }
        else
        {
          if (trialIndex > 0)
            trialIndex--;
-           countDownTimerWait = 30;
-         print("you failed1");
+           countDownTimerWait = 60;
+         print("you failed");
        }
     }else{
-      if (trialIndex > 0) trialIndex--;
-       countDownTimerWait = 30;
-       print("you failed2");
+      if (trialIndex > 0) 
+        trialIndex--;
+        countDownTimerWait = 60;
+      print("you failed2");
     }
   }
 }
