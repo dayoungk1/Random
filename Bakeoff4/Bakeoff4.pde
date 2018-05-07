@@ -1,12 +1,13 @@
 import java.util.ArrayList;
 import java.util.Collections;
 import ketai.sensors.*;
+import ddf.minim.*;
 
 KetaiSensor sensor;
 
 float cursorX, cursorY;
 float light = 0; 
-float proxSensorThreshold = 20; //you will need to change this per your device.
+float proxSensorThreshold = 10; //you will need to change this per your device.
 
 private class Target
 {
@@ -23,6 +24,10 @@ int finishTime = 0; //records the time of the final click
 boolean userDone = false;
 int countDownTimerWait = 0;
 float dy,dz= 0;
+boolean covered = false; 
+//Minim minimc5;
+//AudioPlayer c5;
+
 
 void setup() {
   size(600, 600); //you can change this to be fullscreen
@@ -44,6 +49,8 @@ void setup() {
     println("created target with " + t.target + "," + t.action);
   }
   Collections.shuffle(targets); // randomize the order of the button;
+  //minimc5 = new Minim(this);
+  //c5 = minimc5.loadFile("C5.mp3");
 }
 
 void draw() {
@@ -71,20 +78,20 @@ void draw() {
     return;
   }
   // left to right 
-  if (dz > 0){
+  if (dz > 0 && targets.get(index).target == 0){
     fill(#FAAC4C); 
     rect(10*abs(dz), 300, 20*abs(dz), 600);
   }
-  else if (dz < 0) {
+  else if (dz < 0  && targets.get(index).target == 2) {
     fill(#9095FF); 
     rect(600-10*abs(dz), 300, 20 * abs(dz), 600);
   }
   // down to up
-  if (dy>0) {
+  if (dy>0 && targets.get(index).target == 3) {
     fill(#FF6767); 
     rect(300,10*abs(dy),600, 20 * abs(dy));
   }
-  else if (dy < 0) {
+  else if (dy < 0  && targets.get(index).target == 1) {
     fill(#68E580); 
     rect(300, 600-10*abs(dy), 600, 20 * abs(dy));
   }
@@ -99,19 +106,15 @@ void draw() {
     text("LEFT", width/2, 100);
   }
   else if (targets.get(index).target == 1){
-    text("UP", width/2, 100);
+    text("DOWN", width/2, 100);
   }
   else if (targets.get(index).target == 2){
-    text("LEFT", width/2, 100);
-  } else {
     text("RIGHT", width/2, 100);
-  }
-  if (targets.get(index).action == 1)
-  {
-     text("COVER", width/2, 150); 
   } else {
-     text("UNCOVER", width/2, 150); 
+    text("UP", width/2, 100);
   }
+  int coveredint = covered ? 1: 0;
+  if (targets.get(index).action != coveredint){text("COVER", width/2, 150);}
 }
 
 void onOrientationEvent(float x, float y, float z) 
@@ -120,44 +123,37 @@ void onOrientationEvent(float x, float y, float z)
   dy = y;
   dz = z;
   Target t = targets.get(index);
-  int li = (light <= proxSensorThreshold )? 1:0;
+  int coveredint = covered ? 1: 0;
+  print(coveredint);
   if (userDone || index>=targets.size())
     return;
   
   if (((z > 30)||(z<-30) || (y<-30) || (y>30)) && countDownTimerWait<0)
   {
-    println(y,z, li, "target", t.target, "action", t.action);
-    if (li == t.action)
-    {
-       if (z>30 && t.target == 0) {
-         trialIndex++;
-         countDownTimerWait = 60;
-       }
-       else if (y>30 && t.target == 1){
-         trialIndex++; 
-         countDownTimerWait = 60;
-       }
-       else if (z < -30 && t.target == 2){
-         trialIndex ++;
-         countDownTimerWait = 60;
-       }
-       else if (y<-30 && t.target == 3){
-         trialIndex++;
-         countDownTimerWait = 60;
-       }
-       else
-       {
-         if (trialIndex > 0)
-           trialIndex--;
-           countDownTimerWait = 60;
-         print("you failed");
-       }
-    }else{
-      if (trialIndex > 0) 
-        trialIndex--;
-        countDownTimerWait = 60;
-      print("you failed2");
-    }
+     if (z>30 && t.target == 0 && coveredint == t.action) {
+       trialIndex++;
+       countDownTimerWait = 60;
+     }
+     else if (y>30 && t.target == 1 && coveredint == t.action){
+       trialIndex++; 
+       countDownTimerWait = 60;
+     }
+     else if (z < -30 && t.target == 2 && coveredint == t.action){
+       trialIndex ++;
+       countDownTimerWait = 60;
+     }
+     else if (y<-30 && t.target == 3 && coveredint == t.action){
+       trialIndex++;
+       countDownTimerWait = 60;
+     }
+     // else
+     //{
+     //  if (trialIndex > 0)
+     //    countDownTimerWait = 60;
+     //    covered = false;
+     //    // trialIndex--;
+     //    print("you failed");
+     //}
   }
 }
 
@@ -173,5 +169,7 @@ int hitTest()
 
 void onLightEvent(float v) //this just updates the light value
 {
-  light = v;
+  if (v <= proxSensorThreshold ){
+    covered = !covered;
+  }
 }
