@@ -25,6 +25,7 @@ boolean userDone = false;
 int countDownTimerWait = 0;
 float dy,dz= 0;
 boolean covered = false; 
+int coveredi = -1;
 //Minim minimc5;
 //AudioPlayer c5;
 
@@ -55,7 +56,6 @@ void setup() {
 
 void draw() {
   int index = trialIndex;
-
   //uncomment line below to see if sensors are updating
   //println("light val: " + light +", cursor accel vals: " + cursorX +"/" + cursorY);
   background(80); //background is light grey
@@ -87,11 +87,11 @@ void draw() {
     rect(600-10*abs(dz), 300, 20 * abs(dz), 600);
   }
   // down to up
-  if (dy>0 && targets.get(index).target == 3) {
+  if (dy>0 && targets.get(index).target == 1) {
     fill(#FF6767); 
     rect(300,10*abs(dy),600, 20 * abs(dy));
   }
-  else if (dy < 0  && targets.get(index).target == 1) {
+  else if (dy < 0  && targets.get(index).target == 3) {
     fill(#68E580); 
     rect(300, 600-10*abs(dy), 600, 20 * abs(dy));
   }
@@ -106,15 +106,15 @@ void draw() {
     text("LEFT", width/2, 100);
   }
   else if (targets.get(index).target == 1){
-    text("DOWN", width/2, 100);
+    text("UP", width/2, 100);
   }
   else if (targets.get(index).target == 2){
     text("RIGHT", width/2, 100);
   } else {
-    text("UP", width/2, 100);
+    text("DOWN", width/2, 100);
   }
-  int coveredint = covered ? 1: 0;
-  if (targets.get(index).action != coveredint){text("COVER", width/2, 150);}
+  if (targets.get(index).action != coveredi){text("COVER", width/2, 150);}
+  //text(coveredi + "!", width/2, 200);
 }
 
 void onOrientationEvent(float x, float y, float z) 
@@ -123,37 +123,43 @@ void onOrientationEvent(float x, float y, float z)
   dy = y;
   dz = z;
   Target t = targets.get(index);
-  int coveredint = covered ? 1: 0;
-  print(coveredint);
+
   if (userDone || index>=targets.size())
     return;
   
   if (((z > 30)||(z<-30) || (y<-30) || (y>30)) && countDownTimerWait<0)
   {
-     if (z>30 && t.target == 0 && coveredint == t.action) {
+     if (z>30 && t.target == 0 && coveredi == t.action) {
        trialIndex++;
        countDownTimerWait = 60;
+       coveredi = -1;
      }
-     else if (y>30 && t.target == 1 && coveredint == t.action){
+     else if (y>30 && t.target == 1 && coveredi == t.action){
        trialIndex++; 
        countDownTimerWait = 60;
+       coveredi = -1;
      }
-     else if (z < -30 && t.target == 2 && coveredint == t.action){
+     else if (z < -30 && t.target == 2 && coveredi == t.action){
        trialIndex ++;
        countDownTimerWait = 60;
+       coveredi = -1;
      }
-     else if (y<-30 && t.target == 3 && coveredint == t.action){
+     else if (y<-30 && t.target == 3 && coveredi == t.action){
        trialIndex++;
        countDownTimerWait = 60;
+       coveredi = -1;
      }
-     // else
-     //{
-     //  if (trialIndex > 0)
-     //    countDownTimerWait = 60;
-     //    covered = false;
-     //    // trialIndex--;
-     //    print("you failed");
-     //}
+      else
+     {
+       if (trialIndex > 0)
+       {
+         countDownTimerWait = 60;
+         covered = false;
+         coveredi = -1;
+         trialIndex--;
+         print("you failed");
+       }
+     }
   }
 }
 
@@ -169,7 +175,9 @@ int hitTest()
 
 void onLightEvent(float v) //this just updates the light value
 {
+  println(coveredi);
   if (v <= proxSensorThreshold ){
-    covered = !covered;
+    if (coveredi < 1 ) {coveredi++;}
+    else if (coveredi == 1){coveredi = 0;}
   }
 }
